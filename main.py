@@ -9,7 +9,7 @@ import random
 class Snake:
     def __init__(self):
         self.body = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
-        self.direction = Vector2(1, 0)
+        self.direction = Vector2(0, 0)
         self.new_block = False
 
         self.head_up = pygame.image.load('resources/head_up_30.png').convert_alpha()
@@ -96,39 +96,29 @@ class Snake:
 
     def add_block(self):
         self.new_block = True
+
+    def reset(self):
+        self.body = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
+        self.direction = Vector2(0, 0)
 class Fruit:
-    def __init__(self, snake_body):
-        self.randomize(snake_body)
-        self.apple = pygame.image.load('resources/apple_30.png').convert_alpha()
+    def __init__(self):
+        self.randomize()
     def draw_fruit(self):
         x_pos = int(self.pos.x) * cell_size
         y_pos = int(self.pos.y) * cell_size
         fruit_rect = pygame.Rect(x_pos, y_pos, cell_size, cell_size)
-        screen.blit(self.apple, fruit_rect)
+        screen.blit(apple, fruit_rect)
         # pygame.draw.rect(screen, (126, 166, 114), fruit_rect)
 
-    def randomize(self, snake_body):
-        occupied = False
-        while True:
-            x = random.randint(0, cell_number - 1)
-            y = random.randint(0, cell_number - 1)
-            for block in snake_body:
-                if x == block.x and y == block.y:
-                    occupied = True
-                    break
-
-            self.x = x
-            self.y = y
-
-            if occupied is not True:
-                break
-
+    def randomize(self):
+        self.x = random.randint(0, cell_number - 1)
+        self.y = random.randint(0, cell_number - 1)
         self.pos = Vector2(self.x, self.y)
 
 class Main:
     def __init__(self):
         self.Snake = Snake()
-        self.Fruit = Fruit(self.Snake.body)
+        self.Fruit = Fruit()
 
     def update(self):
         self.Snake.move_snake()
@@ -138,11 +128,16 @@ class Main:
         self.draw_grass()
         self.Snake.draw_snake()
         self.Fruit.draw_fruit()
+        self.draw_score()
 
     def check_collision(self):
         if self.Fruit.pos == self.Snake.body[0]:
-            self.Fruit.randomize(self.Snake.body)
+            self.Fruit.randomize()
             self.Snake.add_block()
+
+        for block in self.Snake.body[1:]:
+            if block == self.Fruit.pos:
+                self.Fruit.randomize()
 
     def check_fail(self):
         if (not 0 <= self.Snake.body[0].x < cell_number) or (not 0 <= self.Snake.body[0].y < cell_number):
@@ -152,8 +147,7 @@ class Main:
             if block == self.Snake.body[0]:
                 self.game_over()
     def game_over(self):
-        pygame.quit()
-        sys.exit()
+        self.Snake.reset()
 
     def draw_grass(self):
         grass_color = (167, 209, 61)
@@ -169,6 +163,14 @@ class Main:
                         grass_rect = pygame.Rect(col * cell_size, row * cell_size, cell_size, cell_size)
                         pygame.draw.rect(screen, grass_color, grass_rect)
 
+    def draw_score(self):
+        score_text = str(len(self.Snake.body) - 3)
+        score_surface = game_font.render(score_text, True, (56, 74, 12))
+        score_x = int(cell_size * cell_number - 3*(cell_size/2))
+        score_y = int(cell_size * cell_number - 3*(cell_size/2))
+        score_rect = score_surface.get_rect(center=(score_x, score_y))
+        screen.blit(score_surface, score_rect)
+
 
 if __name__ == "__main__":
     pygame.init()
@@ -180,6 +182,8 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((screen_x_y, screen_x_y))
 
     clock = pygame.time.Clock() # Object that control FPS
+    apple = pygame.image.load('resources/apple_30.png').convert_alpha()
+    game_font = pygame.font.Font("font/roboto/Roboto-Regular.ttf", 25)
 
     Main_game = Main()
 
